@@ -7,4 +7,5 @@ tailscale_repo_file: /etc/apt/sources.list.d/tailscale.list
 tailscale_packages:
   - tailscale
 
-tailscale_firewall_package: ufw
+# Firewall (firewalld preferred on all platforms)
+tailscale_firewall_package: firewalld

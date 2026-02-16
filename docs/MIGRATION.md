@@ -307,7 +307,7 @@ Most paths are identical; mdadm config is handled via vars.
 |-------------------|--------------------------|-------------------------|
 | Primary tool      | `ifupdown` / netplan     | NetworkManager          |
 | Tailscale setup   | Via `/etc/default/`      | Via systemd env files   |
-| Firewall          | UFW (optional)           | firewalld (default)     |
+| Firewall          | firewalld                | firewalld (default)     |
 
 Keystone uses Tailscale for networking, abstracting this difference.
 

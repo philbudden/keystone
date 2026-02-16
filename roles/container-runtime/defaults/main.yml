@@ -9,8 +9,10 @@ container_runtime_enable_api: true
 container_runtime_quadlet_dir: /etc/containers/systemd
 
 # Podman storage configuration
+# Defaults to /var/lib/containers/storage (system default)
+# If keystone_storage.ssd_mount is defined, uses custom location
 container_runtime_storage_driver: overlay
-container_runtime_storage_root: "{{ keystone_storage.ssd_mount }}/podman"
+container_runtime_storage_root: "{{ keystone_storage.ssd_mount | default('/var/lib/containers') }}/podman"
 
 # Network configuration
 container_runtime_default_network: podman

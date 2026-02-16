@@ -1,6 +1,8 @@
 # Storage management tasks
 # Managed by Ansible - paths are configured from inventory
+# NOTE: These commands require custom storage to be configured in inventory
 
+{% if keystone_storage is defined and keystone_storage.backup_devices is defined %}
 # Show RAID status
 storage-raid-status:
     @echo "=== RAID Status ==="
@@ -23,3 +25,12 @@ storage-usage:
 storage-raid-scrub:
     @echo "Starting RAID scrub (this may take hours)..."
     @sudo bash -c "echo check > /sys/block/md0/md/sync_action" 2>/dev/null || echo "RAID not configured or already scrubbing"
+{% else %}
+# Custom storage not configured - using system defaults
+storage-info:
+    @echo "Custom storage not configured in inventory"
+    @echo "To enable RAID and custom mounts, configure keystone_storage in inventory/hosts.yml"
+    @echo ""
+    @echo "Current storage usage:"
+    @df -h / /var/lib/containers /var/lib/cockpit 2>/dev/null | grep -v "Mounted on"
+{% endif %}

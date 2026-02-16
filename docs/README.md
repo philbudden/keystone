@@ -59,7 +59,16 @@ Each role has clear boundaries and responsibilities (see AGENTS.md §8).
 
 ### Storage Layout
 
-Per AGENTS.md §4, storage is strictly partitioned:
+Keystone supports two deployment modes:
+
+#### 1. **Default Mode** (No Custom Storage)
+- **OS**: eMMC or SD card (`/`)
+- **Container Storage**: `/var/lib/containers` (system default)
+- **Cockpit Data**: `/var/lib/cockpit` (system default)
+- **Use case**: Users without additional storage hardware
+
+#### 2. **Custom Storage Mode** (Configured via Inventory)
+Per AGENTS.md §4, custom storage is strictly partitioned:
 
 | Device          | Purpose                     | Filesystem | Mount Point     |
 |-----------------|-----------------------------|------------|-----------------|
@@ -67,11 +76,13 @@ Per AGENTS.md §4, storage is strictly partitioned:
 | M.2 SSD         | Containers + writable state | XFS        | /mnt/ssd        |
 | 2× HDD (RAID1)  | Backup storage              | ext4       | /mnt/backup     |
 
-**Non-negotiable rules:**
+**Rules (when custom storage configured):**
 - eMMC is OS-only; no user data
 - SSD is the only writable system disk
 - HDDs are backup-only
 - Mount points are managed via systemd units
+
+**To enable custom storage**, define `keystone_storage` in `inventory/hosts.yml` (see template for details).
 
 ### ujust Task Runner
 
@@ -199,12 +210,23 @@ Example:
 tailscale_auth_key: "tskey-auth-..."
 ```
 
-### Firewall Rules
+### Firewall Rules (firewalld)
 
-- Default policy: **DENY**
-- Allow SSH from Tailscale network only (100.64.0.0/10)
-- Allow Cockpit from Tailscale network only
+Keystone uses **firewalld** on all platforms (Debian and Fedora) for consistency:
+
+- **Default zone**: `drop` (deny all by default)
+- **Trusted zone**: Tailscale interface (`tailscale0`)
+- **Allowed services on trusted zone**:
+  - SSH (port 22)
+  - Cockpit (port 9090)
+- **CGNAT range**: 100.64.0.0/10 (Tailscale)
 - No services on `0.0.0.0` without explicit justification
+
+firewalld is preferred over UFW because:
+- Available on both Debian and Fedora
+- Native to Fedora IoT (default firewall)
+- Better zone-based security model
+- Consistent behavior across platforms
 
 ## Migration Path: Debian → Fedora IoT
 

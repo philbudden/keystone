@@ -1,14 +1,27 @@
 ---
 # storage-primitives role tasks
+# This role is OPTIONAL - only runs if keystone_storage is defined in inventory
+
+- name: Check if custom storage is configured
+  ansible.builtin.set_fact:
+    storage_enabled: "{{ keystone_storage is defined and keystone_storage.ssd_device is defined }}"
+  tags: always
+
+- name: Display storage configuration status
+  ansible.builtin.debug:
+    msg: "{{ 'Custom storage configured - managing devices' if storage_enabled else 'No custom storage - using system defaults' }}"
+  tags: always
 
 - name: Include OS-specific variables
   ansible.builtin.include_vars: "{{ ansible_distribution }}.yml"
+  when: storage_enabled
   tags: always
 
 - name: Install storage management packages
   ansible.builtin.package:
     name: "{{ storage_packages }}"
     state: present
+  when: storage_enabled
   tags: packages
 
 - name: Check if RAID devices exist
@@ -16,7 +29,10 @@
     path: "{{ item }}"
   register: raid_device_check
   loop: "{{ keystone_storage.backup_devices }}"
-  when: storage_raid_enabled
+  when:
+    - storage_enabled
+    - storage_raid_enabled
+    - keystone_storage.backup_devices is defined
   tags: storage
 
 - name: Check for existing mdadm metadata on backup devices
@@ -77,6 +93,7 @@
   register: ssd_blkid
   failed_when: false
   changed_when: false
+  when: storage_enabled
   tags: storage
 
 - name: Create filesystem on SSD
@@ -85,7 +102,9 @@
     dev: "{{ keystone_storage.ssd_device }}"
     opts: -L keystone-ssd
     force: false
-  when: ssd_blkid.rc != 0
+  when:
+    - storage_enabled
+    - ssd_blkid.rc != 0
   tags: storage
 
 - name: Check if RAID array has existing filesystem

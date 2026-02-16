@@ -20,20 +20,22 @@
     group: root
   tags: containers
 
-- name: Verify SSD mount point exists
+- name: Check if custom SSD mount is defined and exists
   ansible.builtin.stat:
     path: "{{ keystone_storage.ssd_mount }}"
   register: ssd_mount_check
   when: keystone_storage.ssd_mount is defined
   tags: containers
 
-- name: Verify SSD is mounted
+- name: Verify custom SSD is mounted (if configured)
   ansible.builtin.assert:
     that:
       - ssd_mount_check.stat.exists
       - ssd_mount_check.stat.isdir
-    fail_msg: "SSD mount point {{ keystone_storage.ssd_mount }} does not exist. Ensure storage-primitives role has run successfully."
-  when: keystone_storage.ssd_mount is defined
+    fail_msg: "Custom SSD mount point {{ keystone_storage.ssd_mount }} is configured but does not exist. Either run storage-primitives role or remove keystone_storage from inventory."
+  when:
+    - keystone_storage.ssd_mount is defined
+    - ssd_mount_check is defined
   tags: containers
 
 - name: Create Podman storage directory
@@ -43,7 +45,6 @@
     mode: '0755'
     owner: root
     group: root
-  when: keystone_storage.ssd_mount is defined
   tags: containers
 
 - name: Configure Podman storage

@@ -1,18 +1,22 @@
 ---
 # cockpit-container role tasks
 
-- name: Verify SSD mount point exists
+- name: Check if custom SSD mount is defined and exists
   ansible.builtin.stat:
     path: "{{ keystone_storage.ssd_mount }}"
   register: ssd_mount_check
+  when: keystone_storage.ssd_mount is defined
   tags: cockpit
 
-- name: Verify SSD is mounted
+- name: Verify custom SSD is mounted (if configured)
   ansible.builtin.assert:
     that:
       - ssd_mount_check.stat.exists
       - ssd_mount_check.stat.isdir
-    fail_msg: "SSD mount point {{ keystone_storage.ssd_mount }} does not exist. Ensure storage-primitives role has run successfully."
+    fail_msg: "Custom SSD mount point {{ keystone_storage.ssd_mount }} is configured but does not exist. Either run storage-primitives role or remove keystone_storage from inventory."
+  when:
+    - keystone_storage.ssd_mount is defined
+    - ssd_mount_check is defined
   tags: cockpit
 
 - name: Create Cockpit directories
@@ -53,15 +57,14 @@
     daemon_reload: true
   tags: cockpit
 
-- name: Configure firewall for Cockpit (UFW - Debian)
-  community.general.ufw:
-    rule: allow
-    port: "{{ cockpit_port }}"
-    proto: tcp
-    from_ip: 100.64.0.0/10
-  when:
-    - ansible_distribution == 'Debian'
-    - tailscale_firewall_enabled | default(true)
+- name: Configure firewall for Cockpit
+  ansible.posix.firewalld:
+    zone: trusted
+    port: "{{ cockpit_port }}/tcp"
+    state: enabled
+    permanent: true
+    immediate: true
+  when: tailscale_firewall_enabled | default(true)
   tags: 
     - cockpit
     - firewall

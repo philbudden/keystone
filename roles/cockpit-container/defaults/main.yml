@@ -13,8 +13,10 @@ cockpit_port: 9090
 cockpit_bind_address: "0.0.0.0"  # Firewall restricts to tailnet
 
 # Storage
+# Defaults to /var/lib/cockpit (system default)
+# If keystone_storage.ssd_mount is defined, uses custom location
 cockpit_config_dir: /etc/cockpit
-cockpit_data_dir: "{{ keystone_storage.ssd_mount }}/cockpit"
+cockpit_data_dir: "{{ keystone_storage.ssd_mount | default('/var/lib') }}/cockpit"
 
 # Systemd unit
 cockpit_systemd_unit: cockpit.service

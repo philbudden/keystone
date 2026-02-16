@@ -31,7 +31,11 @@ system-info:
     @free -h
     @echo ""
     @echo "=== Disk Usage ==="
-    @findmnt / {{ keystone_storage.ssd_mount | default('/mnt/ssd') }} --output TARGET,FSTYPE,SIZE,USED,AVAIL,USE% 2>/dev/null
+    {% if keystone_storage is defined and keystone_storage.ssd_mount is defined %}
+    @findmnt / {{ keystone_storage.ssd_mount }} --output TARGET,FSTYPE,SIZE,USED,AVAIL,USE% 2>/dev/null
+    {% else %}
+    @df -h / /var/lib/containers --output=target,fstype,size,used,avail,pcent 2>/dev/null | grep -v "Mounted on"
+    {% endif %}
 
 # Restart host (with confirmation)
 system-reboot:
