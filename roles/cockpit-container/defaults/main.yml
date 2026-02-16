@@ -1,0 +1,18 @@
+---
+# cockpit-container role: Containerized Cockpit web interface
+
+# Container image
+cockpit_image: "quay.io/cockpit/ws:latest"
+cockpit_image_tag: "324"  # Pin to specific version
+cockpit_full_image: "{{ cockpit_image | regex_replace(':latest$', '') }}:{{ cockpit_image_tag }}"
+
+# Network configuration (tailnet-only)
+cockpit_port: 9090
+cockpit_bind_address: "0.0.0.0"  # Firewall restricts to tailnet
+
+# Storage
+cockpit_config_dir: /etc/cockpit
+cockpit_data_dir: "{{ keystone_storage.ssd_mount }}/cockpit"
+
+# Systemd unit
+cockpit_systemd_unit: cockpit.service

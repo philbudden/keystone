@@ -1,0 +1,19 @@
+---
+# container-runtime role: Podman installation and configuration
+
+# Podman configuration
+container_runtime_enable_socket: true
+container_runtime_enable_api: true
+
+# Quadlet directory for systemd container units
+container_runtime_quadlet_dir: /etc/containers/systemd
+
+# Podman storage configuration
+container_runtime_storage_driver: overlay
+container_runtime_storage_root: "{{ keystone_storage.ssd_mount }}/podman"
+
+# Network configuration
+container_runtime_default_network: podman
+
+# Security
+container_runtime_rootless_enabled: false

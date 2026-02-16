@@ -1,0 +1,13 @@
+[Unit]
+Description=Mount {{ mount_where }}
+After=local-fs-pre.target
+Wants=local-fs-pre.target
+
+[Mount]
+What={{ mount_what }}
+Where={{ mount_where }}
+Type={{ mount_type }}
+Options={{ mount_options }}
+
+[Install]
+WantedBy=multi-user.target

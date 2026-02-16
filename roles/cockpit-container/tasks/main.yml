@@ -1,0 +1,62 @@
+---
+# cockpit-container role tasks
+
+- name: Create Cockpit directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+  loop:
+    - "{{ cockpit_config_dir }}"
+    - "{{ cockpit_data_dir }}"
+  tags: cockpit
+
+- name: Pull Cockpit container image
+  containers.podman.podman_image:
+    name: "{{ cockpit_full_image }}"
+    state: present
+  tags: cockpit
+
+- name: Create Cockpit systemd unit
+  ansible.builtin.template:
+    src: cockpit.service.j2
+    dest: "/etc/systemd/system/{{ cockpit_systemd_unit }}"
+    mode: '0644'
+    owner: root
+    group: root
+  notify:
+    - reload systemd
+    - restart cockpit
+  tags: cockpit
+
+- name: Enable and start Cockpit service
+  ansible.builtin.systemd:
+    name: "{{ cockpit_systemd_unit }}"
+    enabled: true
+    state: started
+    daemon_reload: true
+  tags: cockpit
+
+- name: Configure firewall for Cockpit (UFW - Debian)
+  community.general.ufw:
+    rule: allow
+    port: "{{ cockpit_port }}"
+    proto: tcp
+    from_ip: 100.64.0.0/10
+  when:
+    - ansible_distribution == 'Debian'
+    - tailscale_firewall_enabled | default(true)
+  tags: 
+    - cockpit
+    - firewall
+
+- name: Display Cockpit access information
+  ansible.builtin.debug:
+    msg: |
+      Cockpit is now available at:
+      https://{{ ansible_default_ipv4.address }}:{{ cockpit_port }}
+      
+      Access via Tailscale only (tailnet-restricted)
+  tags: cockpit

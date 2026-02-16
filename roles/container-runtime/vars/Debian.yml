@@ -1,0 +1,12 @@
+---
+# Debian-specific container packages
+container_runtime_packages:
+  - podman
+  - buildah
+  - skopeo
+  - crun
+  - fuse-overlayfs
+  - slirp4netns
+
+# Debian requires adding repository
+container_runtime_repo_required: true

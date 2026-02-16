@@ -1,0 +1,14 @@
+---
+# tailscale role: Tailscale VPN client installation and configuration
+
+# Tailscale configuration
+tailscale_auth_key: ""  # Must be provided via vault or environment
+tailscale_accept_routes: true
+tailscale_accept_dns: true
+tailscale_advertise_exit_node: false
+tailscale_advertise_routes: []
+
+# Firewall configuration (tailnet-only access model)
+tailscale_firewall_enabled: true
+tailscale_firewall_default_zone: drop
+tailscale_allow_ssh_from_tailnet: true

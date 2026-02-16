@@ -1,0 +1,29 @@
+---
+# base-host role: Minimal OS configuration for Keystone NAS platform
+# Scope: OS packages, system settings, no application logic
+
+base_host_timezone: UTC
+base_host_locale: en_US.UTF-8
+
+# Minimal package set for host layer only
+base_host_packages_common:
+  - curl
+  - wget
+  - git
+  - vim
+  - htop
+  - tmux
+  - rsync
+  - unzip
+  - tar
+  - ca-certificates
+  - gnupg
+  - lsb-release
+
+# Logging and observability
+base_host_logging_enabled: true
+base_host_log_dir: /var/log/keystone
+
+# System hardening
+base_host_disable_ipv6: false
+base_host_configure_sysctl: true

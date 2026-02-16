@@ -1,0 +1,127 @@
+---
+# storage-primitives role tasks
+
+- name: Include OS-specific variables
+  ansible.builtin.include_vars: "{{ ansible_distribution }}.yml"
+  tags: always
+
+- name: Install storage management packages
+  ansible.builtin.package:
+    name: "{{ storage_packages }}"
+    state: present
+  tags: packages
+
+- name: Check if RAID devices exist
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  register: raid_device_check
+  loop: "{{ keystone_storage.backup_devices }}"
+  when: storage_raid_enabled
+  tags: storage
+
+- name: Create RAID array for backup storage
+  ansible.builtin.command:
+    cmd: >
+      mdadm --create {{ storage_raid_device }}
+      --level={{ storage_raid_level }}
+      --raid-devices={{ keystone_storage.backup_devices | length }}
+      --metadata={{ storage_raid_metadata_version }}
+      {{ keystone_storage.backup_devices | join(' ') }}
+    creates: "{{ storage_raid_device }}"
+  when:
+    - storage_raid_enabled
+    - raid_device_check.results | selectattr('stat.exists') | list | length == keystone_storage.backup_devices | length
+  tags: storage
+
+- name: Update mdadm configuration
+  ansible.builtin.shell:
+    cmd: mdadm --detail --scan >> {{ storage_mdadm_config }}
+  args:
+    creates: "{{ storage_mdadm_config }}"
+  when: storage_raid_enabled
+  tags: storage
+
+- name: Update initramfs (Debian)
+  ansible.builtin.command:
+    cmd: update-initramfs -u
+  when:
+    - ansible_distribution == 'Debian'
+    - storage_raid_enabled
+  changed_when: false
+  tags: storage
+
+- name: Create filesystem on SSD
+  community.general.filesystem:
+    fstype: "{{ storage_ssd_fstype }}"
+    dev: "{{ keystone_storage.ssd_device }}"
+    opts: -L keystone-ssd
+  tags: storage
+
+- name: Create filesystem on RAID array
+  community.general.filesystem:
+    fstype: "{{ storage_backup_fstype }}"
+    dev: "{{ storage_raid_device }}"
+    opts: -L keystone-backup
+  when: storage_raid_enabled
+  tags: storage
+
+- name: Create mount points
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+  loop:
+    - "{{ keystone_storage.ssd_mount }}"
+    - "{{ keystone_storage.backup_mount }}"
+  tags: storage
+
+- name: Create systemd mount unit for SSD
+  ansible.builtin.template:
+    src: mount-unit.j2
+    dest: "/etc/systemd/system/{{ keystone_storage.ssd_mount[1:] | replace('/', '-') }}.mount"
+    mode: '0644'
+  vars:
+    mount_what: "LABEL=keystone-ssd"
+    mount_where: "{{ keystone_storage.ssd_mount }}"
+    mount_type: "{{ storage_ssd_fstype }}"
+    mount_options: "{{ storage_ssd_mount_opts }}"
+  notify:
+    - reload systemd
+    - mount ssd
+  tags: storage
+
+- name: Create systemd mount unit for backup
+  ansible.builtin.template:
+    src: mount-unit.j2
+    dest: "/etc/systemd/system/{{ keystone_storage.backup_mount[1:] | replace('/', '-') }}.mount"
+    mode: '0644'
+  vars:
+    mount_what: "LABEL=keystone-backup"
+    mount_where: "{{ keystone_storage.backup_mount }}"
+    mount_type: "{{ storage_backup_fstype }}"
+    mount_options: "{{ storage_backup_mount_opts }}"
+  notify:
+    - reload systemd
+    - mount backup
+  when: storage_raid_enabled
+  tags: storage
+
+- name: Enable and start SMART monitoring
+  ansible.builtin.systemd:
+    name: smartd
+    enabled: true
+    state: started
+  when: storage_smart_enabled
+  tags: storage
+
+- name: Enable and start mdmonitor
+  ansible.builtin.systemd:
+    name: mdmonitor
+    enabled: true
+    state: started
+  when:
+    - storage_raid_enabled
+    - storage_mdmonitor_enabled
+  tags: storage

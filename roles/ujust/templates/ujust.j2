@@ -1,0 +1,14 @@
+#!/bin/bash
+# ujust wrapper script - delegates to just with keystone justfile
+# Mimics blueberry's ujust behavior
+
+set -euo pipefail
+
+JUSTFILE="{{ ujust_base_dir }}/justfile"
+
+if [[ ! -f "${JUSTFILE}" ]]; then
+    echo "Error: Justfile not found at ${JUSTFILE}" >&2
+    exit 1
+fi
+
+exec just --justfile "${JUSTFILE}" "$@"

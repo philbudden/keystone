@@ -1,0 +1,20 @@
+---
+# ujust role: Install and configure just task runner (blueberry-style)
+
+ujust_version: "1.36.0"
+ujust_install_dir: /usr/local/bin
+ujust_base_dir: /usr/share/keystone
+ujust_justfile_dir: "{{ ujust_base_dir }}/just"
+ujust_config_dir: /etc/keystone
+ujust_state_dir: /var/lib/keystone
+
+# Version tracking
+ujust_version_file: "{{ ujust_config_dir }}/version"
+
+# Justfile modules
+ujust_modules:
+  - 00-system.just
+  - 10-storage.just
+  - 20-containers.just
+  - 30-tailscale.just
+  - 60-custom.just

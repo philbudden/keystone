@@ -1,0 +1,8 @@
+---
+# Debian-specific configuration
+ujust_package_deps:
+  - wget
+  - ca-certificates
+
+# Just binary download URL
+ujust_download_url: "https://github.com/casey/just/releases/download/{{ ujust_version }}/just-{{ ujust_version }}-aarch64-unknown-linux-musl.tar.gz"

@@ -1,0 +1,10 @@
+---
+# Debian-specific tailscale configuration
+tailscale_repo_key_url: "https://pkgs.tailscale.com/stable/debian/trixie.noarmor.gpg"
+tailscale_repo_url: "https://pkgs.tailscale.com/stable/debian trixie main"
+tailscale_repo_file: /etc/apt/sources.list.d/tailscale.list
+
+tailscale_packages:
+  - tailscale
+
+tailscale_firewall_package: ufw

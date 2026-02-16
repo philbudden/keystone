@@ -1,0 +1,6 @@
+---
+- name: restart podman
+  ansible.builtin.systemd:
+    name: podman
+    state: restarted
+  when: container_runtime_enable_api

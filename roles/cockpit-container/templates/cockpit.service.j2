@@ -1,0 +1,36 @@
+[Unit]
+Description=Cockpit Web Interface (Containerized)
+After=network-online.target podman.socket
+Wants=network-online.target
+Requires=podman.socket
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=5s
+TimeoutStartSec=0
+
+# Pull latest image before start
+ExecStartPre=-/usr/bin/podman pull {{ cockpit_full_image }}
+
+# Stop and remove existing container
+ExecStartPre=-/usr/bin/podman stop cockpit
+ExecStartPre=-/usr/bin/podman rm cockpit
+
+# Start Cockpit container
+ExecStart=/usr/bin/podman run \
+    --name cockpit \
+    --rm \
+    --privileged \
+    --pid host \
+    --network host \
+    --volume /:/host:rshared \
+    --volume {{ cockpit_config_dir }}:/etc/cockpit:rw \
+    --volume {{ cockpit_data_dir }}:/var/lib/cockpit:rw \
+    {{ cockpit_full_image }}
+
+# Stop container on service stop
+ExecStop=/usr/bin/podman stop -t 10 cockpit
+
+[Install]
+WantedBy=multi-user.target

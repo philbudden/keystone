@@ -1,0 +1,10 @@
+---
+# Fedora-specific package mappings
+base_host_packages:
+  - python3-pip
+  - python3-setuptools
+  - dbus
+  - systemd
+  - systemd-udev
+
+base_host_package_manager: dnf

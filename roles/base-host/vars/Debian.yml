@@ -1,0 +1,12 @@
+---
+# Debian-specific package mappings
+base_host_packages:
+  - apt-transport-https
+  - software-properties-common
+  - python3-pip
+  - python3-setuptools
+  - dbus
+  - systemd
+  - udev
+
+base_host_package_manager: apt

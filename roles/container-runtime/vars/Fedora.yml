@@ -1,0 +1,10 @@
+---
+# Fedora-specific container packages
+container_runtime_packages:
+  - podman
+  - buildah
+  - skopeo
+  - crun
+
+# Fedora includes podman by default
+container_runtime_repo_required: false

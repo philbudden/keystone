@@ -1,0 +1,13 @@
+# Podman storage configuration
+# Managed by Ansible - do not edit manually
+
+[storage]
+driver = "{{ container_runtime_storage_driver }}"
+runroot = "/run/containers/storage"
+graphroot = "{{ container_runtime_storage_root }}"
+
+[storage.options]
+additionalimagestores = []
+
+[storage.options.overlay]
+mountopt = "nodev,metacopy=on"

@@ -1,0 +1,38 @@
+# System maintenance tasks
+
+# Update system packages
+system-update:
+    @echo "Updating system packages..."
+    {% if ansible_distribution == 'Debian' %}
+    sudo apt update && sudo apt upgrade -y
+    {% else %}
+    sudo dnf upgrade -y
+    {% endif %}
+
+# Clean package cache
+system-clean:
+    @echo "Cleaning package cache..."
+    {% if ansible_distribution == 'Debian' %}
+    sudo apt autoremove -y && sudo apt clean
+    {% else %}
+    sudo dnf autoremove -y && sudo dnf clean all
+    {% endif %}
+
+# Show system information
+system-info:
+    @echo "=== System Information ==="
+    @echo "Hostname: $(hostname)"
+    @echo "Kernel: $(uname -r)"
+    @echo "Uptime: $(uptime -p)"
+    @echo "Load: $(uptime | awk -F'load average:' '{print $2}')"
+    @echo ""
+    @echo "=== Memory Usage ==="
+    @free -h
+    @echo ""
+    @echo "=== Disk Usage ==="
+    @df -h / {{ keystone_storage.ssd_mount | default('/mnt/ssd') }} 2>/dev/null
+
+# Restart host (with confirmation)
+system-reboot:
+    @echo "WARNING: This will reboot the system!"
+    @read -p "Continue? (yes/no): " confirm && [[ $$confirm == "yes" ]] && sudo reboot || echo "Cancelled"

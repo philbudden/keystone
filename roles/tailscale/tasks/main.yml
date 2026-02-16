@@ -1,0 +1,91 @@
+---
+# tailscale role tasks
+
+- name: Include OS-specific variables
+  ansible.builtin.include_vars: "{{ ansible_distribution }}.yml"
+  tags: always
+
+- name: Add Tailscale repository (Debian)
+  when: ansible_distribution == 'Debian'
+  tags: packages
+  block:
+    - name: Download Tailscale GPG key
+      ansible.builtin.get_url:
+        url: "{{ tailscale_repo_key_url }}"
+        dest: /usr/share/keyrings/tailscale-archive-keyring.gpg
+        mode: '0644'
+
+    - name: Add Tailscale repository
+      ansible.builtin.apt_repository:
+        repo: "deb [signed-by=/usr/share/keyrings/tailscale-archive-keyring.gpg] {{ tailscale_repo_url }}"
+        filename: tailscale
+        state: present
+
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+
+- name: Add Tailscale repository (Fedora)
+  ansible.builtin.get_url:
+    url: "{{ tailscale_repo_url }}"
+    dest: /etc/yum.repos.d/tailscale.repo
+    mode: '0644'
+  when: ansible_distribution == 'Fedora'
+  tags: packages
+
+- name: Install Tailscale
+  ansible.builtin.package:
+    name: "{{ tailscale_packages }}"
+    state: present
+  tags: packages
+
+- name: Enable and start Tailscale
+  ansible.builtin.systemd:
+    name: tailscaled
+    enabled: true
+    state: started
+
+- name: Check Tailscale status
+  ansible.builtin.command:
+    cmd: tailscale status --json
+  register: tailscale_status
+  changed_when: false
+  failed_when: false
+
+- name: Configure firewall for tailnet-only access (UFW - Debian)
+  when:
+    - ansible_distribution == 'Debian'
+    - tailscale_firewall_enabled
+  tags: firewall
+  block:
+    - name: Install UFW
+      ansible.builtin.package:
+        name: ufw
+        state: present
+
+    - name: Set default UFW policy
+      community.general.ufw:
+        state: enabled
+        policy: deny
+
+    - name: Allow SSH from Tailscale network
+      community.general.ufw:
+        rule: allow
+        port: '22'
+        proto: tcp
+        from_ip: 100.64.0.0/10
+      when: tailscale_allow_ssh_from_tailnet
+
+    - name: Allow Tailscale traffic
+      community.general.ufw:
+        rule: allow
+        interface: tailscale0
+        direction: in
+
+- name: Note about Tailscale authentication
+  ansible.builtin.debug:
+    msg: |
+      Tailscale is installed but may need authentication.
+      Run: sudo tailscale up --accept-routes={{ tailscale_accept_routes }}
+      Or provide tailscale_auth_key in vault for unattended setup.
+  when: tailscale_status.rc != 0

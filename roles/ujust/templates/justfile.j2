@@ -1,0 +1,33 @@
+# Keystone NAS Platform - Main Justfile
+# This is the entry point for ujust commands
+# Modular justfiles are imported from {{ ujust_justfile_dir }}
+
+set shell := ["/bin/bash", "-c"]
+set dotenv-load := true
+
+# Default recipe: show available commands
+default:
+    @just --list --unsorted
+
+# Import modular justfiles
+import "{{ ujust_justfile_dir }}/00-system.just"
+import "{{ ujust_justfile_dir }}/10-storage.just"
+import "{{ ujust_justfile_dir }}/20-containers.just"
+import "{{ ujust_justfile_dir }}/30-tailscale.just"
+import "{{ ujust_justfile_dir }}/60-custom.just"
+
+# Show keystone version
+version:
+    @echo "Keystone NAS Platform"
+    @echo "Version: $(cat {{ ujust_version_file }} 2>/dev/null || echo 'unknown')"
+    @echo "OS: $(lsb_release -ds 2>/dev/null || cat /etc/os-release | grep PRETTY_NAME | cut -d= -f2 | tr -d '\"')"
+
+# Check system status
+status:
+    @echo "=== System Status ==="
+    @systemctl is-active --quiet podman.socket && echo "✓ Podman socket: active" || echo "✗ Podman socket: inactive"
+    @systemctl is-active --quiet tailscaled && echo "✓ Tailscale: active" || echo "✗ Tailscale: inactive"
+    @systemctl is-active --quiet cockpit && echo "✓ Cockpit: active" || echo "✗ Cockpit: inactive"
+    @echo ""
+    @echo "=== Storage Status ==="
+    @df -h {{ keystone_storage.ssd_mount }} {{ keystone_storage.backup_mount }} 2>/dev/null || echo "Mounts not yet configured"

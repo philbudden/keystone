@@ -1,0 +1,24 @@
+# Container management tasks
+
+# List running containers
+container-list:
+    @echo "=== Running Containers ==="
+    @podman ps --format "table {{{{.Names}}}}\t{{{{.Status}}}}\t{{{{.Image}}}}"
+
+# Show container resource usage
+container-stats:
+    @podman stats --no-stream
+
+# Restart cockpit container
+container-cockpit-restart:
+    @echo "Restarting Cockpit..."
+    @sudo systemctl restart cockpit
+
+# Show cockpit logs
+container-cockpit-logs:
+    @journalctl -u cockpit -n 50 -f
+
+# Prune unused containers and images
+container-prune:
+    @echo "Pruning unused containers, images, and volumes..."
+    @podman system prune -af --volumes

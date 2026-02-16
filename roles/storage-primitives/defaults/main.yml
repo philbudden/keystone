@@ -1,0 +1,24 @@
+---
+# storage-primitives role: RAID, filesystems, and mount management
+
+# RAID configuration
+storage_raid_enabled: true
+storage_raid_level: 1
+storage_raid_device: /dev/md0
+storage_raid_metadata_version: "1.2"
+
+# Filesystem types
+storage_ssd_fstype: xfs
+storage_backup_fstype: ext4
+
+# Mount options
+storage_ssd_mount_opts: "defaults,noatime,nodiratime"
+storage_backup_mount_opts: "defaults,noatime"
+
+# Storage health monitoring
+storage_smart_enabled: true
+storage_smart_test_schedule: weekly
+
+# RAID monitoring
+storage_mdmonitor_enabled: true
+storage_mdmonitor_email: root@localhost

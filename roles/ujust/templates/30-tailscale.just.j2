@@ -1,0 +1,20 @@
+# Tailscale network tasks
+
+# Show tailscale status
+tailscale-status:
+    @tailscale status
+
+# Show tailscale IP
+tailscale-ip:
+    @tailscale ip -4
+
+# Reconnect tailscale
+tailscale-reconnect:
+    @echo "Reconnecting Tailscale..."
+    @sudo tailscale down
+    @sleep 2
+    @sudo tailscale up
+
+# Show tailscale logs
+tailscale-logs:
+    @journalctl -u tailscaled -n 50 -f

@@ -1,0 +1,12 @@
+---
+# Debian-specific storage packages
+storage_packages:
+  - mdadm
+  - xfsprogs
+  - e2fsprogs
+  - smartmontools
+  - hdparm
+  - lvm2
+  - parted
+
+storage_mdadm_config: /etc/mdadm/mdadm.conf

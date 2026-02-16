@@ -1,0 +1,24 @@
+# Storage management tasks
+
+# Show RAID status
+storage-raid-status:
+    @echo "=== RAID Status ==="
+    @sudo mdadm --detail /dev/md0 2>/dev/null || echo "RAID not configured"
+
+# Show disk health
+storage-health:
+    @echo "=== Disk Health (SMART) ==="
+    @for disk in {{ keystone_storage.ssd_device }} {{ keystone_storage.backup_devices | join(' ') }}; do \
+        echo "--- $$disk ---"; \
+        sudo smartctl -H $$disk 2>/dev/null || echo "SMART not available"; \
+    done
+
+# Show filesystem usage
+storage-usage:
+    @echo "=== Filesystem Usage ==="
+    @df -h {{ keystone_storage.ssd_mount }} {{ keystone_storage.backup_mount }} 2>/dev/null || echo "Mounts not configured"
+
+# Scrub RAID array (monthly maintenance)
+storage-raid-scrub:
+    @echo "Starting RAID scrub (this may take hours)..."
+    @sudo echo "check" > /sys/block/md0/md/sync_action || echo "RAID not configured or already scrubbing"

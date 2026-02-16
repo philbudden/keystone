@@ -1,0 +1,32 @@
+blueberry/
+
+# Ansible artifacts
+*.retry
+.ansible/
+/tmp/ansible_facts/
+
+# Vault files (encrypted secrets)
+*vault*.yml
+!example-vault.yml
+
+# Runtime state
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Session state (allowed in ~/.copilot/session-state/)
+# but not in repo root
+/plan.md
+/notes.md

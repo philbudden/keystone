@@ -1,0 +1,7 @@
+---
+# Fedora-specific configuration
+ujust_package_deps:
+  - just
+
+# On Fedora, use native package
+ujust_use_native_package: true

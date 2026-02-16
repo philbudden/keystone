@@ -1,0 +1,65 @@
+---
+# Keystone NAS Host Platform Provisioning Playbook
+# This playbook configures the host layer only - no application services.
+#
+# Usage:
+#   ansible-playbook site.yml
+#   ansible-playbook site.yml --tags storage
+#   ansible-playbook site.yml --check  # Dry run
+
+- name: Configure Keystone NAS Host Platform
+  hosts: keystone_hosts
+  become: true
+  
+  vars:
+    keystone_version: "1.0.0"
+  
+  pre_tasks:
+    - name: Display platform information
+      ansible.builtin.debug:
+        msg: |
+          Configuring Keystone v{{ keystone_version }}
+          OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
+          Platform: {{ keystone_platform }}
+          Architecture: {{ ansible_architecture }}
+      tags: always
+    
+    - name: Verify supported platform
+      ansible.builtin.assert:
+        that:
+          - ansible_distribution in ['Debian', 'Fedora']
+          - ansible_architecture == 'aarch64'
+        fail_msg: "Unsupported platform: {{ ansible_distribution }} on {{ ansible_architecture }}"
+        success_msg: "Platform {{ ansible_distribution }}/{{ ansible_architecture }} is supported"
+      tags: always
+  
+  roles:
+    - role: base-host
+      tags: ['base', 'base-host']
+    
+    - role: ujust
+      tags: ['ujust']
+    
+    - role: storage-primitives
+      tags: ['storage', 'storage-primitives']
+    
+    - role: container-runtime
+      tags: ['containers', 'container-runtime']
+    
+    - role: tailscale
+      tags: ['network', 'tailscale']
+    
+    - role: cockpit-container
+      tags: ['cockpit', 'cockpit-container']
+  
+  post_tasks:
+    - name: Display completion summary
+      ansible.builtin.debug:
+        msg: |
+          ✓ Keystone host platform configured successfully
+          
+          Next steps:
+            - Run: ujust --list
+            - Review: /var/log/keystone/
+            - Access Cockpit via Tailscale IP
+      tags: always

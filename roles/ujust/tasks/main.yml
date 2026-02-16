@@ -1,0 +1,103 @@
+---
+# ujust role tasks
+
+- name: Include OS-specific variables
+  ansible.builtin.include_vars: "{{ ansible_distribution }}.yml"
+  tags: always
+
+- name: Install just dependencies
+  ansible.builtin.package:
+    name: "{{ ujust_package_deps }}"
+    state: present
+  tags: packages
+
+- name: Install just from native package (Fedora)
+  ansible.builtin.package:
+    name: just
+    state: present
+  when: 
+    - ansible_distribution == 'Fedora'
+    - ujust_use_native_package | default(false)
+  tags: packages
+
+- name: Download and install just binary (Debian)
+  when: ansible_distribution == 'Debian'
+  tags: packages
+  block:
+    - name: Create temporary directory
+      ansible.builtin.tempfile:
+        state: directory
+        suffix: just
+      register: just_temp_dir
+
+    - name: Download just binary
+      ansible.builtin.get_url:
+        url: "{{ ujust_download_url }}"
+        dest: "{{ just_temp_dir.path }}/just.tar.gz"
+        mode: '0644'
+
+    - name: Extract just binary
+      ansible.builtin.unarchive:
+        src: "{{ just_temp_dir.path }}/just.tar.gz"
+        dest: "{{ just_temp_dir.path }}"
+        remote_src: true
+
+    - name: Install just binary
+      ansible.builtin.copy:
+        src: "{{ just_temp_dir.path }}/just"
+        dest: "{{ ujust_install_dir }}/just"
+        mode: '0755'
+        owner: root
+        group: root
+        remote_src: true
+
+    - name: Clean up temporary directory
+      ansible.builtin.file:
+        path: "{{ just_temp_dir.path }}"
+        state: absent
+
+- name: Create keystone directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+  loop:
+    - "{{ ujust_base_dir }}"
+    - "{{ ujust_justfile_dir }}"
+    - "{{ ujust_config_dir }}"
+    - "{{ ujust_state_dir }}"
+
+- name: Install ujust wrapper script
+  ansible.builtin.template:
+    src: ujust.j2
+    dest: /usr/local/bin/ujust
+    mode: '0755'
+    owner: root
+    group: root
+
+- name: Install main justfile
+  ansible.builtin.template:
+    src: justfile.j2
+    dest: "{{ ujust_base_dir }}/justfile"
+    mode: '0644'
+    owner: root
+    group: root
+
+- name: Install justfile modules
+  ansible.builtin.template:
+    src: "{{ item }}.j2"
+    dest: "{{ ujust_justfile_dir }}/{{ item }}"
+    mode: '0644'
+    owner: root
+    group: root
+  loop: "{{ ujust_modules }}"
+
+- name: Create version file
+  ansible.builtin.copy:
+    content: "{{ lookup('pipe', 'date +%Y%m%d') }}"
+    dest: "{{ ujust_version_file }}"
+    mode: '0644'
+    owner: root
+    group: root

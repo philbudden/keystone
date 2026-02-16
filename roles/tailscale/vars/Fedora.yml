@@ -1,0 +1,8 @@
+---
+# Fedora-specific tailscale configuration
+tailscale_repo_url: "https://pkgs.tailscale.com/stable/fedora/tailscale.repo"
+
+tailscale_packages:
+  - tailscale
+
+tailscale_firewall_package: firewalld

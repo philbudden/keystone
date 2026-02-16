@@ -1,0 +1,56 @@
+---
+# container-runtime role tasks
+
+- name: Include OS-specific variables
+  ansible.builtin.include_vars: "{{ ansible_distribution }}.yml"
+  tags: always
+
+- name: Install container runtime packages
+  ansible.builtin.package:
+    name: "{{ container_runtime_packages }}"
+    state: present
+  tags: packages
+
+- name: Create Quadlet directory
+  ansible.builtin.file:
+    path: "{{ container_runtime_quadlet_dir }}"
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+  tags: containers
+
+- name: Create Podman storage directory
+  ansible.builtin.file:
+    path: "{{ container_runtime_storage_root }}"
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+  when: keystone_storage.ssd_mount is defined
+  tags: containers
+
+- name: Configure Podman storage
+  ansible.builtin.template:
+    src: storage.conf.j2
+    dest: /etc/containers/storage.conf
+    mode: '0644'
+    owner: root
+    group: root
+  notify: restart podman
+  tags: containers
+
+- name: Enable Podman socket
+  ansible.builtin.systemd:
+    name: podman.socket
+    enabled: true
+    state: started
+  when: container_runtime_enable_socket
+  tags: containers
+
+- name: Enable Podman API
+  ansible.builtin.systemd:
+    name: podman.service
+    enabled: "{{ container_runtime_enable_api }}"
+  when: container_runtime_enable_api
+  tags: containers
