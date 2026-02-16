@@ -127,6 +127,18 @@
     - raid_blkid.rc != 0
   tags: storage
 
+- name: Validate storage configuration
+  ansible.builtin.assert:
+    that:
+      - keystone_storage.ssd_device is defined
+      - keystone_storage.ssd_mount is defined
+      - keystone_storage.backup_mount is defined
+      - keystone_storage.ssd_device | length > 0
+      - keystone_storage.ssd_mount | length > 0
+    fail_msg: "keystone_storage is defined but incomplete. Required: ssd_device, ssd_mount, backup_mount"
+  when: storage_enabled
+  tags: storage
+
 - name: Create mount points
   ansible.builtin.file:
     path: "{{ item }}"
@@ -137,6 +149,7 @@
   loop:
     - "{{ keystone_storage.ssd_mount }}"
     - "{{ keystone_storage.backup_mount }}"
+  when: storage_enabled
   tags: storage
 
 - name: Create systemd mount unit for SSD
