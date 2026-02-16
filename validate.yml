@@ -1,0 +1,80 @@
+---
+# Keystone Platform Validation Playbook
+# Verifies deployment integrity without making changes
+
+- name: Validate Keystone NAS Host Platform
+  hosts: keystone_hosts
+  become: true
+  gather_facts: true
+  
+  tasks:
+    - name: Verify platform is supported
+      ansible.builtin.assert:
+        that:
+          - ansible_distribution in ['Debian', 'Fedora']
+          - ansible_architecture == 'aarch64'
+        fail_msg: "Unsupported platform: {{ ansible_distribution }}/{{ ansible_architecture }}"
+        success_msg: "Platform validated: {{ ansible_distribution }}/{{ ansible_architecture }}"
+      tags: always
+
+    - name: Verify SSD mount is active
+      ansible.builtin.command:
+        cmd: findmnt {{ keystone_storage.ssd_mount }}
+      changed_when: false
+      tags: storage
+
+    - name: Verify backup mount is active
+      ansible.builtin.command:
+        cmd: findmnt {{ keystone_storage.backup_mount }}
+      changed_when: false
+      when: storage_raid_enabled | default(true)
+      tags: storage
+
+    - name: Verify RAID array status
+      ansible.builtin.command:
+        cmd: mdadm --detail {{ storage_raid_device | default('/dev/md0') }}
+      changed_when: false
+      when: storage_raid_enabled | default(true)
+      tags: storage
+
+    - name: Verify critical services are running
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        state: started
+      check_mode: true
+      loop:
+        - podman.socket
+        - tailscaled
+        - cockpit
+      tags: services
+
+    - name: Verify ujust is installed
+      ansible.builtin.command:
+        cmd: which ujust
+      changed_when: false
+      tags: ujust
+
+    - name: Verify justfile exists
+      ansible.builtin.stat:
+        path: /usr/share/keystone/justfile
+      register: justfile_check
+      failed_when: not justfile_check.stat.exists
+      tags: ujust
+
+    - name: Verify version file exists
+      ansible.builtin.stat:
+        path: /etc/keystone/version
+      register: version_check
+      failed_when: not version_check.stat.exists
+      tags: ujust
+
+    - name: Display validation summary
+      ansible.builtin.debug:
+        msg: |
+          ✓ Keystone validation completed successfully
+          
+          Platform: {{ ansible_distribution }} {{ ansible_distribution_version }}
+          Version: {{ lookup('file', '/etc/keystone/version', errors='ignore') | default('unknown') }}
+          SSD Mount: {{ keystone_storage.ssd_mount }}
+          Backup Mount: {{ keystone_storage.backup_mount }}
+      tags: always

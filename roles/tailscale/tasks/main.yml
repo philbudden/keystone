@@ -63,11 +63,6 @@
         name: ufw
         state: present
 
-    - name: Set default UFW policy
-      community.general.ufw:
-        state: enabled
-        policy: deny
-
     - name: Allow SSH from Tailscale network
       community.general.ufw:
         rule: allow
@@ -81,6 +76,11 @@
         rule: allow
         interface: tailscale0
         direction: in
+
+    - name: Enable UFW firewall
+      community.general.ufw:
+        state: enabled
+        policy: deny
 
 - name: Note about Tailscale authentication
   ansible.builtin.debug:

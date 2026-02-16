@@ -1,4 +1,5 @@
 # System maintenance tasks
+# Managed by Ansible - OS detection handled at template time
 
 # Update system packages
 system-update:
@@ -24,13 +25,13 @@ system-info:
     @echo "Hostname: $(hostname)"
     @echo "Kernel: $(uname -r)"
     @echo "Uptime: $(uptime -p)"
-    @echo "Load: $(uptime | awk -F'load average:' '{print $2}')"
+    @echo "Load: $(uptime | awk -F'load average:' '{print $$2}')"
     @echo ""
     @echo "=== Memory Usage ==="
     @free -h
     @echo ""
     @echo "=== Disk Usage ==="
-    @df -h / {{ keystone_storage.ssd_mount | default('/mnt/ssd') }} 2>/dev/null
+    @findmnt / {{ keystone_storage.ssd_mount | default('/mnt/ssd') }} --output TARGET,FSTYPE,SIZE,USED,AVAIL,USE% 2>/dev/null
 
 # Restart host (with confirmation)
 system-reboot:

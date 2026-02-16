@@ -19,6 +19,23 @@
   when: storage_raid_enabled
   tags: storage
 
+- name: Check for existing mdadm metadata on backup devices
+  ansible.builtin.command:
+    cmd: mdadm --examine {{ item }}
+  register: mdadm_examine
+  loop: "{{ keystone_storage.backup_devices }}"
+  failed_when: false
+  changed_when: false
+  when: storage_raid_enabled
+  tags: storage
+
+- name: Check if RAID array already exists
+  ansible.builtin.stat:
+    path: "{{ storage_raid_device }}"
+  register: raid_array_stat
+  when: storage_raid_enabled
+  tags: storage
+
 - name: Create RAID array for backup storage
   ansible.builtin.command:
     cmd: >
@@ -26,27 +43,39 @@
       --level={{ storage_raid_level }}
       --raid-devices={{ keystone_storage.backup_devices | length }}
       --metadata={{ storage_raid_metadata_version }}
+      --assume-clean
       {{ keystone_storage.backup_devices | join(' ') }}
-    creates: "{{ storage_raid_device }}"
   when:
     - storage_raid_enabled
+    - not raid_array_stat.stat.exists
     - raid_device_check.results | selectattr('stat.exists') | list | length == keystone_storage.backup_devices | length
+    - mdadm_examine.results | selectattr('rc', 'equalto', 0) | list | length == 0
   tags: storage
 
-- name: Update mdadm configuration
+- name: Generate mdadm configuration
   ansible.builtin.shell:
-    cmd: mdadm --detail --scan >> {{ storage_mdadm_config }}
-  args:
-    creates: "{{ storage_mdadm_config }}"
+    cmd: mdadm --detail --scan
+  register: mdadm_scan
   when: storage_raid_enabled
+  changed_when: false
   tags: storage
 
-- name: Update initramfs (Debian)
+- name: Update mdadm configuration file
+  ansible.builtin.copy:
+    content: "{{ mdadm_scan.stdout }}\n"
+    dest: "{{ storage_mdadm_config }}"
+    mode: '0644'
+    owner: root
+    group: root
+  when: storage_raid_enabled
+  notify: update initramfs
+  tags: storage
+
+- name: Check if SSD has existing filesystem
   ansible.builtin.command:
-    cmd: update-initramfs -u
-  when:
-    - ansible_distribution == 'Debian'
-    - storage_raid_enabled
+    cmd: blkid {{ keystone_storage.ssd_device }}
+  register: ssd_blkid
+  failed_when: false
   changed_when: false
   tags: storage
 
@@ -55,6 +84,17 @@
     fstype: "{{ storage_ssd_fstype }}"
     dev: "{{ keystone_storage.ssd_device }}"
     opts: -L keystone-ssd
+    force: false
+  when: ssd_blkid.rc != 0
+  tags: storage
+
+- name: Check if RAID array has existing filesystem
+  ansible.builtin.command:
+    cmd: blkid {{ storage_raid_device }}
+  register: raid_blkid
+  failed_when: false
+  changed_when: false
+  when: storage_raid_enabled
   tags: storage
 
 - name: Create filesystem on RAID array
@@ -62,7 +102,10 @@
     fstype: "{{ storage_backup_fstype }}"
     dev: "{{ storage_raid_device }}"
     opts: -L keystone-backup
-  when: storage_raid_enabled
+    force: false
+  when:
+    - storage_raid_enabled
+    - raid_blkid.rc != 0
   tags: storage
 
 - name: Create mount points

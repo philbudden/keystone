@@ -245,6 +245,36 @@ pip install ansible
 # Ensure SSH access and sudo privileges
 ```
 
+### ⚠️ Important Safety Warnings
+
+**CRITICAL: Storage operations are destructive!**
+
+Before running the playbook:
+
+1. **Backup all data** on devices specified in inventory
+2. **Verify device paths** - incorrect paths will destroy wrong disks
+3. **RAID creation will wipe backup devices** completely
+4. **Filesystem creation only runs on empty devices** - existing filesystems are preserved
+
+The playbook includes safety checks:
+- ✅ Filesystem creation skipped if device already has a filesystem
+- ✅ RAID creation verifies no existing mdadm metadata
+- ✅ Mount dependencies enforced (Podman/Cockpit require SSD)
+- ✅ Idempotent operations - safe to re-run
+
+**First-time deployment:**
+```bash
+# 1. BACKUP YOUR DATA
+# 2. Verify inventory device paths match your hardware
+vim inventory/hosts.yml
+
+# 3. Dry-run to see what will change
+ansible-playbook site.yml --check --diff
+
+# 4. Review all storage-related tasks carefully
+ansible-playbook site.yml --tags storage --check --diff
+```
+
 ### Deployment Steps
 
 1. **Clone repository**

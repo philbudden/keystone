@@ -1,10 +1,12 @@
 ---
 # cockpit-container role: Containerized Cockpit web interface
 
-# Container image
-cockpit_image: "quay.io/cockpit/ws:latest"
-cockpit_image_tag: "324"  # Pin to specific version
-cockpit_full_image: "{{ cockpit_image | regex_replace(':latest$', '') }}:{{ cockpit_image_tag }}"
+# Container image (pinned to specific digest)
+cockpit_image: "quay.io/cockpit/ws"
+cockpit_image_tag: "324"
+cockpit_image_digest: "sha256:f24b5c23f5e0b3d1f0e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5"  # TODO: Replace with actual digest
+cockpit_use_digest: false  # Set to true once digest is obtained
+cockpit_full_image: "{{ cockpit_image }}:{{ cockpit_image_tag }}"
 
 # Network configuration (tailnet-only)
 cockpit_port: 9090

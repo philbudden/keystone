@@ -1,0 +1,46 @@
+# Ansible Lint Configuration
+# https://ansible-lint.readthedocs.io/
+
+profile: production
+
+exclude_paths:
+  - .git/
+  - blueberry/
+  - blueberry-k3s/
+  - blueberry-minimal/
+  - .ansible/
+  - .venv/
+  - venv/
+
+# Use default rules but skip some for specific use cases
+skip_list:
+  - yaml[line-length]  # Allow long lines in templates and documentation
+  - no-changed-when  # We explicitly handle changed_when in many places
+  - risky-shell-pipe  # We use pipes deliberately in some cases
+
+warn_list:
+  - experimental  # Warn about experimental features
+  - role-name[path]  # Warn about role naming conventions
+
+# Enforce these rules strictly
+enable_list:
+  - args
+  - empty-string-compare
+  - no-free-form
+  - no-jinja-when
+  - no-tabs
+
+# Offline mode - don't download from Galaxy during linting
+offline: true
+
+# Use Ansible's own syntax check
+parseable: true
+
+# Show progress
+progressbar: true
+
+# Colorized output
+colored: true
+
+# Task name rules
+task_name_prefix: "{stem} | "

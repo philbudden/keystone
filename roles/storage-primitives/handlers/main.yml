@@ -14,3 +14,8 @@
     name: "{{ keystone_storage.backup_mount[1:] | replace('/', '-') }}.mount"
     enabled: true
     state: started
+
+- name: update initramfs
+  ansible.builtin.command:
+    cmd: update-initramfs -u
+  when: ansible_distribution == 'Debian'

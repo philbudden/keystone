@@ -96,7 +96,7 @@
 
 - name: Create version file
   ansible.builtin.copy:
-    content: "{{ lookup('pipe', 'date +%Y%m%d') }}"
+    content: "{{ keystone_version }}"
     dest: "{{ ujust_version_file }}"
     mode: '0644'
     owner: root

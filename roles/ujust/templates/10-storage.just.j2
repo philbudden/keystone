@@ -1,4 +1,5 @@
 # Storage management tasks
+# Managed by Ansible - paths are configured from inventory
 
 # Show RAID status
 storage-raid-status:
@@ -16,9 +17,9 @@ storage-health:
 # Show filesystem usage
 storage-usage:
     @echo "=== Filesystem Usage ==="
-    @df -h {{ keystone_storage.ssd_mount }} {{ keystone_storage.backup_mount }} 2>/dev/null || echo "Mounts not configured"
+    @findmnt {{ keystone_storage.ssd_mount }} {{ keystone_storage.backup_mount }} --output TARGET,FSTYPE,SIZE,USED,AVAIL,USE% 2>/dev/null || echo "Mounts not configured"
 
 # Scrub RAID array (monthly maintenance)
 storage-raid-scrub:
     @echo "Starting RAID scrub (this may take hours)..."
-    @sudo echo "check" > /sys/block/md0/md/sync_action || echo "RAID not configured or already scrubbing"
+    @sudo bash -c "echo check > /sys/block/md0/md/sync_action" 2>/dev/null || echo "RAID not configured or already scrubbing"

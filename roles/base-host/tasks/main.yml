@@ -23,11 +23,19 @@
     name: "{{ base_host_timezone }}"
   notify: restart systemd-timesyncd
 
+- name: Check current system locale
+  ansible.builtin.command:
+    cmd: localectl status
+  register: current_locale
+  changed_when: false
+  when: ansible_distribution == 'Debian'
+
 - name: Configure system locale
   ansible.builtin.command:
     cmd: localectl set-locale LANG={{ base_host_locale }}
-  changed_when: false
-  when: ansible_distribution == 'Debian'
+  when:
+    - ansible_distribution == 'Debian'
+    - base_host_locale not in current_locale.stdout
 
 - name: Ensure log directory exists
   ansible.builtin.file:

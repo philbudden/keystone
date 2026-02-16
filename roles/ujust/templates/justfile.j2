@@ -1,6 +1,7 @@
 # Keystone NAS Platform - Main Justfile
 # This is the entry point for ujust commands
 # Modular justfiles are imported from {{ ujust_justfile_dir }}
+# This file is managed by Ansible - changes will be overwritten
 
 set shell := ["/bin/bash", "-c"]
 set dotenv-load := true
@@ -30,4 +31,4 @@ status:
     @systemctl is-active --quiet cockpit && echo "✓ Cockpit: active" || echo "✗ Cockpit: inactive"
     @echo ""
     @echo "=== Storage Status ==="
-    @df -h {{ keystone_storage.ssd_mount }} {{ keystone_storage.backup_mount }} 2>/dev/null || echo "Mounts not yet configured"
+    @findmnt {{ keystone_storage.ssd_mount }} {{ keystone_storage.backup_mount }} --noheadings --output TARGET,FSTYPE,SIZE,USED,AVAIL,USE% 2>/dev/null || echo "Mounts not yet configured"
