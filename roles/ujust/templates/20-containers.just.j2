@@ -3,7 +3,7 @@
 # List running containers
 container-list:
     @echo "=== Running Containers ==="
-    @podman ps --format "table {{{{.Names}}}}\t{{{{.Status}}}}\t{{{{.Image}}}}"
+    @podman ps --format "table {% raw %}{{.Names}}\t{{.Status}}\t{{.Image}}{% endraw %}"
 
 # Show container resource usage
 container-stats:
