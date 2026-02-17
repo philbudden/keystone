@@ -1,12 +1,14 @@
 ---
 # Debian-specific package mappings
 base_host_packages:
-  - apt-transport-https
-  - software-properties-common
   - python3-pip
   - python3-setuptools
+  - python3-venv
   - dbus
   - systemd
   - udev
 
 base_host_package_manager: apt
+
+# Note: apt-transport-https is built into apt since Debian 11
+# Note: software-properties-common is Ubuntu-specific and not needed on Debian

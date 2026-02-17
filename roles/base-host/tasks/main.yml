@@ -1,15 +1,27 @@
 ---
 # base-host role tasks
 
-- name: Include OS-specific variables
-  ansible.builtin.include_vars: "{{ ansible_distribution }}.yml"
+- name: Detect OS family for variable loading
+  ansible.builtin.set_fact:
+    base_host_vars_file: >-
+      {%- if ansible_distribution in ['Debian', 'Raspbian', 'Raspberry Pi OS'] -%}
+      Debian
+      {%- elif ansible_distribution in ['Fedora', 'RedHat', 'CentOS', 'Rocky', 'AlmaLinux'] -%}
+      Fedora
+      {%- else -%}
+      {{ ansible_distribution }}
+      {%- endif -%}
   tags: always
 
-- name: Update package cache (Debian)
+- name: Include OS-specific variables
+  ansible.builtin.include_vars: "{{ base_host_vars_file }}.yml"
+  tags: always
+
+- name: Update package cache (Debian-based)
   ansible.builtin.apt:
     update_cache: true
     cache_valid_time: 3600
-  when: ansible_distribution == 'Debian'
+  when: ansible_os_family == 'Debian'
   tags: packages
 
 - name: Install base system packages
@@ -28,13 +40,13 @@
     cmd: localectl status
   register: current_locale
   changed_when: false
-  when: ansible_distribution == 'Debian'
+  when: ansible_os_family == 'Debian'
 
 - name: Configure system locale
   ansible.builtin.command:
     cmd: localectl set-locale LANG={{ base_host_locale }}
   when:
-    - ansible_distribution == 'Debian'
+    - ansible_os_family == 'Debian'
     - base_host_locale not in current_locale.stdout
 
 - name: Ensure log directory exists
