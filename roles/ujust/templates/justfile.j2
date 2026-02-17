@@ -31,9 +31,9 @@ status:
     @systemctl is-active --quiet cockpit && echo "✓ Cockpit: active" || echo "✗ Cockpit: inactive"
     @echo ""
     @echo "=== Storage Status ==="
-    {% if keystone_storage is defined and keystone_storage.ssd_mount is defined %}
+{% if keystone_storage is defined and keystone_storage.ssd_mount is defined %}
     @findmnt {{ keystone_storage.ssd_mount }} {{ keystone_storage.backup_mount }} --noheadings --output TARGET,FSTYPE,SIZE,USED,AVAIL,USE% 2>/dev/null || echo "Custom mounts not yet configured"
-    {% else %}
+{% else %}
     @echo "Using system default storage (no custom mounts configured)"
     @df -h / /var/lib/containers /var/lib/cockpit --output=target,fstype,size,used,avail,pcent 2>/dev/null | grep -v "Mounted on"
-    {% endif %}
+{% endif %}

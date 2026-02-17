@@ -4,20 +4,20 @@
 # Update system packages
 system-update:
     @echo "Updating system packages..."
-    {% if ansible_distribution == 'Debian' %}
+{% if ansible_distribution == 'Debian' %}
     sudo apt update && sudo apt upgrade -y
-    {% else %}
+{% else %}
     sudo dnf upgrade -y
-    {% endif %}
+{% endif %}
 
 # Clean package cache
 system-clean:
     @echo "Cleaning package cache..."
-    {% if ansible_distribution == 'Debian' %}
+{% if ansible_distribution == 'Debian' %}
     sudo apt autoremove -y && sudo apt clean
-    {% else %}
+{% else %}
     sudo dnf autoremove -y && sudo dnf clean all
-    {% endif %}
+{% endif %}
 
 # Show system information
 system-info:
@@ -31,11 +31,11 @@ system-info:
     @free -h
     @echo ""
     @echo "=== Disk Usage ==="
-    {% if keystone_storage is defined and keystone_storage.ssd_mount is defined %}
+{% if keystone_storage is defined and keystone_storage.ssd_mount is defined %}
     @findmnt / {{ keystone_storage.ssd_mount }} --output TARGET,FSTYPE,SIZE,USED,AVAIL,USE% 2>/dev/null
-    {% else %}
+{% else %}
     @df -h / /var/lib/containers --output=target,fstype,size,used,avail,pcent 2>/dev/null | grep -v "Mounted on"
-    {% endif %}
+{% endif %}
 
 # Restart host (with confirmation)
 system-reboot:
