@@ -42,14 +42,20 @@
   loop: "{{ keystone_storage.backup_devices }}"
   failed_when: false
   changed_when: false
-  when: storage_raid_enabled
+  when:
+    - storage_enabled
+    - storage_raid_enabled
+    - keystone_storage.backup_devices is defined
   tags: storage
 
 - name: Check if RAID array already exists
   ansible.builtin.stat:
     path: "{{ storage_raid_device }}"
   register: raid_array_stat
-  when: storage_raid_enabled
+  when:
+    - storage_enabled
+    - storage_raid_enabled
+    - keystone_storage.backup_devices is defined
   tags: storage
 
 - name: Create RAID array for backup storage
@@ -62,7 +68,9 @@
       --assume-clean
       {{ keystone_storage.backup_devices | join(' ') }}
   when:
+    - storage_enabled
     - storage_raid_enabled
+    - keystone_storage.backup_devices is defined
     - not raid_array_stat.stat.exists
     - raid_device_check.results | selectattr('stat.exists') | list | length == keystone_storage.backup_devices | length
     - mdadm_examine.results | selectattr('rc', 'equalto', 0) | list | length == 0
@@ -72,7 +80,10 @@
   ansible.builtin.shell:
     cmd: mdadm --detail --scan
   register: mdadm_scan
-  when: storage_raid_enabled
+  when:
+    - storage_enabled
+    - storage_raid_enabled
+    - keystone_storage.backup_devices is defined
   changed_when: false
   tags: storage
 
@@ -83,7 +94,10 @@
     mode: '0644'
     owner: root
     group: root
-  when: storage_raid_enabled
+  when:
+    - storage_enabled
+    - storage_raid_enabled
+    - keystone_storage.backup_devices is defined
   notify: update initramfs
   tags: storage
 
@@ -113,7 +127,10 @@
   register: raid_blkid
   failed_when: false
   changed_when: false
-  when: storage_raid_enabled
+  when:
+    - storage_enabled
+    - storage_raid_enabled
+    - keystone_storage.backup_devices is defined
   tags: storage
 
 - name: Create filesystem on RAID array
@@ -123,7 +140,9 @@
     opts: -L keystone-backup
     force: false
   when:
+    - storage_enabled
     - storage_raid_enabled
+    - keystone_storage.backup_devices is defined
     - raid_blkid.rc != 0
   tags: storage
 
@@ -162,6 +181,7 @@
     mount_where: "{{ keystone_storage.ssd_mount }}"
     mount_type: "{{ storage_ssd_fstype }}"
     mount_options: "{{ storage_ssd_mount_opts }}"
+  when: storage_enabled
   notify:
     - reload systemd
     - mount ssd
@@ -177,10 +197,13 @@
     mount_where: "{{ keystone_storage.backup_mount }}"
     mount_type: "{{ storage_backup_fstype }}"
     mount_options: "{{ storage_backup_mount_opts }}"
+  when:
+    - storage_enabled
+    - storage_raid_enabled
+    - keystone_storage.backup_devices is defined
   notify:
     - reload systemd
     - mount backup
-  when: storage_raid_enabled
   tags: storage
 
 - name: Enable and start SMART monitoring
