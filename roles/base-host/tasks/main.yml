@@ -40,14 +40,37 @@
     cmd: localectl status
   register: current_locale
   changed_when: false
+  failed_when: false
   when: ansible_os_family == 'Debian'
 
-- name: Configure system locale
+- name: Check if locale needs to be set
+  ansible.builtin.set_fact:
+    locale_needs_update: >-
+      {{ ansible_os_family == 'Debian' and 
+         (current_locale.skipped is not defined or not current_locale.skipped) and
+         (current_locale.rc != 0 or base_host_locale not in current_locale.stdout) }}
+
+- name: Configure system locale via localectl
   ansible.builtin.command:
     cmd: localectl set-locale LANG={{ base_host_locale }}
+  become: true
+  register: localectl_result
+  failed_when: false
   when:
-    - ansible_os_family == 'Debian'
-    - base_host_locale not in current_locale.stdout
+    - locale_needs_update | bool
+    - current_locale.rc == 0
+
+- name: Configure system locale via /etc/default/locale (fallback)
+  ansible.builtin.lineinfile:
+    path: /etc/default/locale
+    regexp: '^LANG='
+    line: 'LANG={{ base_host_locale }}'
+    create: true
+    mode: '0644'
+  become: true
+  when:
+    - locale_needs_update | bool
+    - current_locale.rc != 0 or (localectl_result is defined and localectl_result.rc != 0)
 
 - name: Ensure log directory exists
   ansible.builtin.file:
