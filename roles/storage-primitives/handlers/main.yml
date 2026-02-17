@@ -3,18 +3,6 @@
   ansible.builtin.systemd:
     daemon_reload: true
 
-- name: mount ssd
-  ansible.builtin.systemd:
-    name: "{{ keystone_storage.ssd_mount[1:] | replace('/', '-') }}.mount"
-    enabled: true
-    state: started
-
-- name: mount backup
-  ansible.builtin.systemd:
-    name: "{{ keystone_storage.backup_mount[1:] | replace('/', '-') }}.mount"
-    enabled: true
-    state: started
-
 - name: update initramfs
   ansible.builtin.command:
     cmd: update-initramfs -u

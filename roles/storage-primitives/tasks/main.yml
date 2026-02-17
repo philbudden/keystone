@@ -182,9 +182,16 @@
     mount_type: "{{ storage_ssd_fstype }}"
     mount_options: "{{ storage_ssd_mount_opts }}"
   when: storage_enabled
-  notify:
-    - reload systemd
-    - mount ssd
+  notify: reload systemd
+  tags: storage
+
+- name: Enable and start SSD mount
+  ansible.builtin.systemd:
+    name: "{{ keystone_storage.ssd_mount[1:] | replace('/', '-') }}.mount"
+    enabled: true
+    state: started
+    daemon_reload: true
+  when: storage_enabled
   tags: storage
 
 - name: Create systemd mount unit for backup
@@ -201,9 +208,19 @@
     - storage_enabled
     - storage_raid_enabled
     - keystone_storage.backup_devices is defined
-  notify:
-    - reload systemd
-    - mount backup
+  notify: reload systemd
+  tags: storage
+
+- name: Enable and start backup mount
+  ansible.builtin.systemd:
+    name: "{{ keystone_storage.backup_mount[1:] | replace('/', '-') }}.mount"
+    enabled: true
+    state: started
+    daemon_reload: true
+  when:
+    - storage_enabled
+    - storage_raid_enabled
+    - keystone_storage.backup_devices is defined
   tags: storage
 
 - name: Enable and start SMART monitoring
