@@ -19,7 +19,11 @@ storage-health:
 # Show filesystem usage
 storage-usage:
     @echo "=== Filesystem Usage ==="
-    @findmnt {{ keystone_storage.ssd_mount }} {{ keystone_storage.backup_mount }} --output TARGET,FSTYPE,SIZE,USED,AVAIL,USE% 2>/dev/null || echo "Mounts not configured"
+    @echo "SSD Mount ({{ keystone_storage.ssd_mount }}):"
+    @findmnt {{ keystone_storage.ssd_mount }} --output TARGET,FSTYPE,SIZE,USED,AVAIL,USE% --noheadings 2>/dev/null || echo "  Not mounted"
+    @echo ""
+    @echo "Backup Mount ({{ keystone_storage.backup_mount }}):"
+    @findmnt {{ keystone_storage.backup_mount }} --output TARGET,FSTYPE,SIZE,USED,AVAIL,USE% --noheadings 2>/dev/null || echo "  Not mounted"
 
 # Scrub RAID array (monthly maintenance)
 storage-raid-scrub:
