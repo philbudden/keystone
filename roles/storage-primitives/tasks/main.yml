@@ -121,6 +121,25 @@
     - ssd_blkid.rc != 0
   tags: storage
 
+- name: Verify SSD filesystem label
+  ansible.builtin.command:
+    cmd: blkid -s LABEL -o value {{ keystone_storage.ssd_device }}
+  register: ssd_label_check
+  failed_when: false
+  changed_when: false
+  when: storage_enabled
+  tags: storage
+
+- name: Display SSD filesystem information
+  ansible.builtin.debug:
+    msg: |
+      SSD Device: {{ keystone_storage.ssd_device }}
+      Filesystem exists: {{ ssd_blkid.rc == 0 }}
+      Current label: {{ ssd_label_check.stdout if ssd_label_check.rc == 0 else 'none' }}
+      Expected label: keystone-ssd
+  when: storage_enabled
+  tags: storage
+
 - name: Check if RAID array has existing filesystem
   ansible.builtin.command:
     cmd: blkid {{ storage_raid_device }}
@@ -191,7 +210,31 @@
     enabled: true
     state: started
     daemon_reload: true
-  when: storage_enabled
+  when:
+    - storage_enabled
+    - ssd_label_check.rc == 0
+    - ssd_label_check.stdout == 'keystone-ssd'
+  tags: storage
+
+- name: Warning if SSD filesystem label is incorrect
+  ansible.builtin.fail:
+    msg: |
+      SSD filesystem label mismatch!
+      Device: {{ keystone_storage.ssd_device }}
+      Current label: {{ ssd_label_check.stdout if ssd_label_check.rc == 0 else 'none' }}
+      Expected label: keystone-ssd
+      
+      To fix this, you can either:
+      1. Wipe and recreate the filesystem:
+         sudo wipefs -a {{ keystone_storage.ssd_device }}
+         Then re-run the playbook
+      
+      2. Relabel the existing filesystem (data preserved):
+         For XFS: sudo xfs_admin -L keystone-ssd {{ keystone_storage.ssd_device }}
+         For ext4: sudo e2label {{ keystone_storage.ssd_device }} keystone-ssd
+  when:
+    - storage_enabled
+    - ssd_label_check.stdout != 'keystone-ssd'
   tags: storage
 
 - name: Create systemd mount unit for backup
