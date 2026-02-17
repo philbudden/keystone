@@ -11,10 +11,10 @@ storage-raid-status:
 # Show disk health
 storage-health:
     @echo "=== Disk Health (SMART) ==="
-    @for disk in {{ keystone_storage.ssd_device }} {{ keystone_storage.backup_devices | join(' ') }}; do \
-        echo "--- $$disk ---"; \
-        sudo smartctl -H $$disk 2>/dev/null || echo "SMART not available"; \
-    done
+{% for device in [keystone_storage.ssd_device] + keystone_storage.backup_devices %}
+    @echo "--- {{ device }} ---"
+    @sudo smartctl -H {{ device }} 2>/dev/null || echo "SMART not available for {{ device }}"
+{% endfor %}
 
 # Show filesystem usage
 storage-usage:
