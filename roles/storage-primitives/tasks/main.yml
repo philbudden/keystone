@@ -211,7 +211,9 @@
     name: smartd
     enabled: true
     state: started
-  when: storage_smart_enabled
+  when:
+    - storage_enabled
+    - storage_smart_enabled
   tags: storage
 
 - name: Enable and start mdmonitor
@@ -220,6 +222,8 @@
     enabled: true
     state: started
   when:
+    - storage_enabled
     - storage_raid_enabled
     - storage_mdmonitor_enabled
+    - keystone_storage.backup_devices is defined
   tags: storage
