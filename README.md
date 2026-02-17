@@ -9,21 +9,35 @@ Keystone is an Ansible-based infrastructure system that provisions and governs t
 ## Quick Start
 
 ```bash
-# 1. Clone repository
-git clone <your-repo-url> /opt/keystone
-cd /opt/keystone
+# 1. Clone repository (to your home directory, NOT /opt/keystone)
+git clone <your-repo-url> ~/keystone
+cd ~/keystone
 
-# 2. Install Ansible dependencies
+# 2. Install Ansible (if not already installed)
+# For Debian/Ubuntu/Raspberry Pi OS:
+sudo apt update
+sudo apt install -y python3-pip python3-venv
+python3 -m venv .venv
+source .venv/bin/activate
+pip install ansible
+
+# For Fedora:
+# sudo dnf install -y python3-pip
+# python3 -m venv .venv
+# source .venv/bin/activate
+# pip install ansible
+
+# 3. Install Ansible dependencies
 ansible-galaxy install -r requirements.yml
 
-# 3. Review and customize inventory
+# 4. Review and customize inventory
 vim inventory/hosts.yml
 
-# 4. Deploy (dry-run first)
+# 5. Deploy (dry-run first)
 ansible-playbook site.yml --check
 ansible-playbook site.yml
 
-# 5. Verify installation
+# 6. Verify installation
 ujust --list
 ujust status
 ```
@@ -237,13 +251,50 @@ Application services belong in a **separate repository** that consumes this host
 
 ### Prerequisites
 
+#### On Control Machine (Laptop/Workstation)
+
+If running Ansible from a remote control machine:
+
 ```bash
-# On control machine (laptop/workstation)
+# Install Ansible in a virtual environment
+python3 -m venv ~/ansible-venv
+source ~/ansible-venv/bin/activate
 pip install ansible
 
-# On target host (Raspberry Pi)
-# Ensure SSH access and sudo privileges
+# Install required collections
+ansible-galaxy install -r requirements.yml
 ```
+
+#### On Target Host (Raspberry Pi)
+
+If running Ansible locally on the target host:
+
+```bash
+# Clone to user's home directory (NOT /opt/keystone)
+# /opt/keystone will be created by the playbook itself
+git clone <your-repo-url> ~/keystone
+cd ~/keystone
+
+# Install Ansible in a virtual environment
+# This avoids permission issues and keeps dependencies isolated
+sudo apt update
+sudo apt install -y python3-pip python3-venv
+python3 -m venv .venv
+source .venv/bin/activate
+pip install ansible
+
+# Install required collections
+ansible-galaxy install -r requirements.yml
+```
+
+**Note:** Do NOT clone to `/opt/keystone` initially. The playbook will create and manage that directory. Always clone to your home directory and activate the virtual environment before running Ansible commands.
+
+#### SSH Access
+
+For remote deployments, ensure:
+- SSH access to target host
+- User has sudo privileges
+- SSH key-based authentication (recommended)
 
 ### ⚠️ Important Safety Warnings
 
@@ -279,22 +330,33 @@ ansible-playbook site.yml --tags storage --check --diff
 
 1. **Clone repository**
    ```bash
-   git clone <your-repo-url> /opt/keystone
-   cd /opt/keystone
+   # Clone to home directory, NOT /opt/keystone
+   git clone <your-repo-url> ~/keystone
+   cd ~/keystone
    ```
 
-2. **Install Ansible collections**
+2. **Set up Ansible environment**
+   ```bash
+   # Create and activate virtual environment
+   python3 -m venv .venv
+   source .venv/bin/activate
+   
+   # Install Ansible
+   pip install ansible
+   ```
+
+3. **Install Ansible collections**
    ```bash
    ansible-galaxy install -r requirements.yml
    ```
 
-3. **Customize inventory**
+4. **Customize inventory**
    ```bash
    vim inventory/hosts.yml
    # Update storage device paths if needed
    ```
 
-4. **Deploy infrastructure**
+5. **Deploy infrastructure**
    ```bash
    # Dry-run first
    ansible-playbook site.yml --check
@@ -303,13 +365,13 @@ ansible-playbook site.yml --tags storage --check --diff
    ansible-playbook site.yml
    ```
 
-5. **Verify installation**
+6. **Verify installation**
    ```bash
    ujust --list
    ujust status
    ```
 
-6. **Access Cockpit**
+7. **Access Cockpit**
    ```bash
    # Get Tailscale IP
    ujust tailscale-ip
@@ -317,6 +379,8 @@ ansible-playbook site.yml --tags storage --check --diff
    # Access via browser
    # https://<tailscale-ip>:9090
    ```
+
+**Note:** Remember to activate the virtual environment (`source .venv/bin/activate`) each time you work with the repository in a new shell session.
 
 ## Customization
 
