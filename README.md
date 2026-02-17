@@ -179,6 +179,7 @@ ansible-playbook site.yml
 
 ## Documentation
 
+- **[Storage Setup Guide](docs/STORAGE-SETUP.md)** - Manual disk partitioning and preparation (required before first deployment)
 - **[Architecture Overview](docs/README.md)** - Design principles, components, deployment workflow
 - **[Migration Guide](docs/MIGRATION.md)** - Debian → Fedora IoT migration path
 - **[Operations Guide](docs/OPERATIONS.md)** - Complete ujust command reference
@@ -303,9 +304,10 @@ For remote deployments, ensure:
 Before running the playbook:
 
 1. **Backup all data** on devices specified in inventory
-2. **Verify device paths** - incorrect paths will destroy wrong disks
-3. **RAID creation will wipe backup devices** completely
-4. **Filesystem creation only runs on empty devices** - existing filesystems are preserved
+2. **Partition your SSD** - See [Storage Setup Guide](docs/STORAGE-SETUP.md)
+3. **Verify device paths** - incorrect paths will destroy wrong disks
+4. **RAID creation will wipe backup devices** completely
+5. **Filesystem creation only runs on empty devices** - existing filesystems are preserved
 
 The playbook includes safety checks:
 - ✅ Filesystem creation skipped if device already has a filesystem
@@ -313,9 +315,16 @@ The playbook includes safety checks:
 - ✅ Mount dependencies enforced (Podman/Cockpit require SSD)
 - ✅ Idempotent operations - safe to re-run
 
+**Storage setup required:**
+If you plan to use custom storage (SSD + RAID), you **must** manually partition your SSD before running the playbook. See [docs/STORAGE-SETUP.md](docs/STORAGE-SETUP.md) for detailed instructions.
+
 **First-time deployment:**
 ```bash
+# 0. PREPARE STORAGE (if using custom storage)
+#    See docs/STORAGE-SETUP.md for partitioning instructions
+
 # 1. BACKUP YOUR DATA
+
 # 2. Verify inventory device paths match your hardware
 vim inventory/hosts.yml
 
