@@ -173,7 +173,7 @@
     - keystone_storage.backup_devices is defined
   tags: storage
 
-- name: Create filesystem on RAID array
+- name: Create filesystem on RAID array (new device)
   community.general.filesystem:
     fstype: "{{ storage_backup_fstype }}"
     dev: "{{ storage_raid_device }}"
@@ -184,6 +184,57 @@
     - storage_raid_enabled
     - keystone_storage.backup_devices is defined
     - raid_blkid.rc != 0
+  tags: storage
+
+- name: Verify RAID filesystem label
+  ansible.builtin.command:
+    cmd: blkid -s LABEL -o value {{ storage_raid_device }}
+  register: raid_label_check
+  failed_when: false
+  changed_when: false
+  when:
+    - storage_enabled
+    - storage_raid_enabled
+    - keystone_storage.backup_devices is defined
+  tags: storage
+
+- name: Create filesystem on RAID array (wrong or missing label)
+  community.general.filesystem:
+    fstype: "{{ storage_backup_fstype }}"
+    dev: "{{ storage_raid_device }}"
+    opts: -L keystone-backup
+    force: true
+  when:
+    - storage_enabled
+    - storage_raid_enabled
+    - keystone_storage.backup_devices is defined
+    - raid_blkid.rc == 0
+    - raid_label_check.stdout != 'keystone-backup'
+  tags: storage
+
+- name: Re-verify RAID filesystem label after creation
+  ansible.builtin.command:
+    cmd: blkid -s LABEL -o value {{ storage_raid_device }}
+  register: raid_label_final
+  failed_when: false
+  changed_when: false
+  when:
+    - storage_enabled
+    - storage_raid_enabled
+    - keystone_storage.backup_devices is defined
+  tags: storage
+
+- name: Display RAID filesystem information
+  ansible.builtin.debug:
+    msg: |
+      RAID Device: {{ storage_raid_device }}
+      Filesystem exists: {{ raid_blkid.rc == 0 }}
+      Current label: {{ raid_label_final.stdout if raid_label_final.rc == 0 else 'none' }}
+      Expected label: keystone-backup
+  when:
+    - storage_enabled
+    - storage_raid_enabled
+    - keystone_storage.backup_devices is defined
   tags: storage
 
 - name: Validate storage configuration
@@ -283,6 +334,29 @@
     - storage_enabled
     - storage_raid_enabled
     - keystone_storage.backup_devices is defined
+    - raid_label_final.rc == 0
+    - raid_label_final.stdout == 'keystone-backup'
+  tags: storage
+
+- name: Warning if RAID filesystem label is incorrect
+  ansible.builtin.fail:
+    msg: |
+      RAID filesystem label mismatch!
+      Device: {{ storage_raid_device }}
+      Current label: {{ raid_label_final.stdout if raid_label_final.rc == 0 else 'none' }}
+      Expected label: keystone-backup
+      
+      This should not happen - the playbook attempted to create the filesystem
+      but the label is still incorrect. Please check:
+      
+      1. Verify RAID array is active: sudo mdadm --detail {{ storage_raid_device }}
+      2. Check if device is read-only: mount | grep {{ storage_raid_device }}
+      3. Try manually: sudo mkfs.ext4 -f -L keystone-backup {{ storage_raid_device }}
+  when:
+    - storage_enabled
+    - storage_raid_enabled
+    - keystone_storage.backup_devices is defined
+    - raid_label_final.stdout != 'keystone-backup'
   tags: storage
 
 - name: Enable and start SMART monitoring
