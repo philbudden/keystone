@@ -110,7 +110,7 @@
   when: storage_enabled
   tags: storage
 
-- name: Create filesystem on SSD
+- name: Create filesystem on SSD (new device)
   community.general.filesystem:
     fstype: "{{ storage_ssd_fstype }}"
     dev: "{{ keystone_storage.ssd_device }}"
@@ -130,12 +130,33 @@
   when: storage_enabled
   tags: storage
 
+- name: Create filesystem on SSD (wrong or missing label)
+  community.general.filesystem:
+    fstype: "{{ storage_ssd_fstype }}"
+    dev: "{{ keystone_storage.ssd_device }}"
+    opts: -L keystone-ssd
+    force: true
+  when:
+    - storage_enabled
+    - ssd_blkid.rc == 0
+    - ssd_label_check.stdout != 'keystone-ssd'
+  tags: storage
+
+- name: Re-verify SSD filesystem label after creation
+  ansible.builtin.command:
+    cmd: blkid -s LABEL -o value {{ keystone_storage.ssd_device }}
+  register: ssd_label_final
+  failed_when: false
+  changed_when: false
+  when: storage_enabled
+  tags: storage
+
 - name: Display SSD filesystem information
   ansible.builtin.debug:
     msg: |
       SSD Device: {{ keystone_storage.ssd_device }}
       Filesystem exists: {{ ssd_blkid.rc == 0 }}
-      Current label: {{ ssd_label_check.stdout if ssd_label_check.rc == 0 else 'none' }}
+      Current label: {{ ssd_label_final.stdout if ssd_label_final.rc == 0 else 'none' }}
       Expected label: keystone-ssd
   when: storage_enabled
   tags: storage
@@ -212,8 +233,8 @@
     daemon_reload: true
   when:
     - storage_enabled
-    - ssd_label_check.rc == 0
-    - ssd_label_check.stdout == 'keystone-ssd'
+    - ssd_label_final.rc == 0
+    - ssd_label_final.stdout == 'keystone-ssd'
   tags: storage
 
 - name: Warning if SSD filesystem label is incorrect
@@ -221,20 +242,18 @@
     msg: |
       SSD filesystem label mismatch!
       Device: {{ keystone_storage.ssd_device }}
-      Current label: {{ ssd_label_check.stdout if ssd_label_check.rc == 0 else 'none' }}
+      Current label: {{ ssd_label_final.stdout if ssd_label_final.rc == 0 else 'none' }}
       Expected label: keystone-ssd
       
-      To fix this, you can either:
-      1. Wipe and recreate the filesystem:
-         sudo wipefs -a {{ keystone_storage.ssd_device }}
-         Then re-run the playbook
+      This should not happen - the playbook attempted to create the filesystem
+      but the label is still incorrect. Please check:
       
-      2. Relabel the existing filesystem (data preserved):
-         For XFS: sudo xfs_admin -L keystone-ssd {{ keystone_storage.ssd_device }}
-         For ext4: sudo e2label {{ keystone_storage.ssd_device }} keystone-ssd
+      1. Verify device path is correct in inventory
+      2. Check if device is read-only: mount | grep {{ keystone_storage.ssd_device }}
+      3. Try manually: sudo mkfs.xfs -f -L keystone-ssd {{ keystone_storage.ssd_device }}
   when:
     - storage_enabled
-    - ssd_label_check.stdout != 'keystone-ssd'
+    - ssd_label_final.stdout != 'keystone-ssd'
   tags: storage
 
 - name: Create systemd mount unit for backup
