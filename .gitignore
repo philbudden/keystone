@@ -30,3 +30,4 @@ venv/
 # but not in repo root
 /plan.md
 /notes.md
+host_vars/keystone.yml

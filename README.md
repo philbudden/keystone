@@ -267,6 +267,15 @@ pip install ansible
 ansible-galaxy install -r requirements.yml
 ```
 
+Then configure the SSH connection by copying the provided example:
+
+```bash
+cp host_vars/keystone.yml.example host_vars/keystone.yml
+# Edit host_vars/keystone.yml with the target host IP and SSH user
+```
+
+`host_vars/keystone.yml` is gitignored — it holds your site-specific connection details and should not be committed.
+
 #### On Target Host (Raspberry Pi)
 
 If running Ansible locally on the target host:

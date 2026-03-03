@@ -1,0 +1,11 @@
+---
+# Remote SSH connection settings.
+# Copy this file to host_vars/keystone.yml to run the playbook from a
+# control machine instead of directly on the target host.
+#
+# The Tailscale IP is recommended — it enforces the tailnet-only trust model.
+# Find it with: tailscale ip -4 (run on the target host)
+
+ansible_host: "100.x.x.x"   # Tailscale IP (or LAN IP before Tailscale is provisioned)
+ansible_user: "pi"           # SSH user with sudo privileges
+ansible_connection: ssh
