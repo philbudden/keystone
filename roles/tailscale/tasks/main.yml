@@ -74,6 +74,27 @@
         permanent: true
         immediate: true
 
+    - name: Assign LAN interface to drop zone
+      ansible.posix.firewalld:
+        zone: drop
+        interface: "{{ tailscale_lan_interface }}"
+        state: enabled
+        permanent: true
+        immediate: true
+
+    - name: Check NetworkManager connection zone
+      ansible.builtin.command:
+        cmd: nmcli -g connection.zone connection show "{{ tailscale_lan_nm_connection }}"
+      register: nm_current_zone
+      changed_when: false
+      failed_when: false
+
+    - name: Set NetworkManager connection zone to drop
+      ansible.builtin.command:
+        cmd: nmcli connection modify "{{ tailscale_lan_nm_connection }}" connection.zone drop
+      when: nm_current_zone.stdout | trim != 'drop'
+      notify: Reload NetworkManager connection
+
     - name: Add Tailscale interface to trusted zone
       ansible.posix.firewalld:
         zone: trusted

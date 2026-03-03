@@ -1,0 +1,5 @@
+---
+- name: Reload NetworkManager connection
+  ansible.builtin.command:
+    cmd: nmcli connection up "{{ tailscale_lan_nm_connection }}"
+  changed_when: false

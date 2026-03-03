@@ -13,6 +13,16 @@ tailscale_firewall_enabled: true
 tailscale_firewall_default_zone: drop
 tailscale_allow_ssh_from_tailnet: true
 
+# LAN interface to explicitly assign to the drop zone.
+# firewalld assigns detected interfaces to 'public' by default, overriding
+# the default zone setting. Assigning it explicitly enforces drop-by-default.
+# Override in host_vars if your LAN interface is not eth0 (e.g. end0, ens3).
+tailscale_lan_interface: eth0
+
+# NetworkManager connection name for the LAN interface.
+# Find with: nmcli -t -f NAME,DEVICE connection show --active
+tailscale_lan_nm_connection: "Wired connection 1"
+
 # Allow specific local LAN sources through the firewall
 # For devices that cannot join the tailnet (e.g. IoT cameras, doorbells)
 # Each entry: source (IPv4 address), services (list of firewalld service names)
