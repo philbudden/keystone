@@ -1,0 +1,24 @@
+---
+# Vault-encrypted secrets and site-specific configuration.
+#
+# Copy this file to vault.yml, populate it, then encrypt it:
+#   ansible-vault encrypt group_vars/keystone_hosts/vault.yml
+#
+# vault.yml is gitignored. This example file shows the expected structure.
+
+# Tailscale authentication key for unattended provisioning.
+# Generate at https://login.tailscale.com/admin/settings/keys
+tailscale_auth_key: "tskey-auth-..."
+
+# LAN sources permitted through the firewall outside of the tailnet.
+# Use this for devices that cannot be enrolled in Tailscale (e.g. IoT cameras).
+# Each entry requires a source IP and a list of firewalld service names.
+#
+# Available service names: https://firewalld.org/documentation/service/
+# Common values: samba, ftp, nfs, ssh
+tailscale_allowed_local_sources: []
+# Example:
+# tailscale_allowed_local_sources:
+#   - source: "192.168.1.244"   # Doorbell camera
+#     services:
+#       - samba
