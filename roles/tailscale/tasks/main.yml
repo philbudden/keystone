@@ -91,6 +91,16 @@
         immediate: true
       when: tailscale_allow_ssh_from_tailnet
 
+    - name: Allow specific local LAN sources
+      ansible.posix.firewalld:
+        rich_rule: "rule family='ipv4' source address='{{ item.0.source }}' service name='{{ item.1 }}' accept"
+        zone: drop
+        state: enabled
+        permanent: true
+        immediate: true
+      loop: "{{ tailscale_allowed_local_sources | subelements('services') }}"
+      when: tailscale_allowed_local_sources | length > 0
+
     - name: Reload firewalld
       ansible.builtin.systemd:
         name: firewalld

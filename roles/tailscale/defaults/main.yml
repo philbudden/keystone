@@ -12,3 +12,8 @@ tailscale_advertise_routes: []
 tailscale_firewall_enabled: true
 tailscale_firewall_default_zone: drop
 tailscale_allow_ssh_from_tailnet: true
+
+# Allow specific local LAN sources through the firewall
+# For devices that cannot join the tailnet (e.g. IoT cameras, doorbells)
+# Each entry: source (IPv4 address), services (list of firewalld service names)
+tailscale_allowed_local_sources: []
