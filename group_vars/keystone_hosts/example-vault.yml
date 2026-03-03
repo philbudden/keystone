@@ -13,12 +13,11 @@ tailscale_auth_key: "tskey-auth-..."
 # LAN sources permitted through the firewall outside of the tailnet.
 # Use this for devices that cannot be enrolled in Tailscale (e.g. IoT cameras).
 # Each entry requires a source IP and a list of firewalld service names.
+# Remove entries or set to [] to disable.
 #
 # Available service names: https://firewalld.org/documentation/service/
 # Common values: samba, ftp, nfs, ssh
-tailscale_allowed_local_sources: []
-# Example:
-# tailscale_allowed_local_sources:
-#   - source: "192.168.1.244"   # Doorbell camera
-#     services:
-#       - samba
+tailscale_allowed_local_sources:
+  - source: "192.168.1.x"   # Replace with device IP
+    services:
+      - samba               # Replace or extend with required services
