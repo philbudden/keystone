@@ -87,6 +87,7 @@ All design decisions minimize Fedora IoT migration friction (see [Migration Guid
 - Tailscale VPN integration
 - Tailnet-only firewall rules (no public exposure)
 - SSH restricted to Tailscale network
+- Configurable per-IP LAN exceptions (for devices that cannot join the tailnet)
 
 ### ✅ Infrastructure UI
 - Cockpit web interface (containerized)
@@ -422,18 +423,32 @@ custom-backup:
 
 ### Secrets Management
 
-Use Ansible Vault for sensitive data:
+Sensitive and site-specific values (Tailscale auth key, allowed LAN sources) are kept out of version control using Ansible Vault.
+
+A documented template is provided at `group_vars/keystone_hosts/example-vault.yml`. Copy it, populate it, then encrypt:
 
 ```bash
-# Create encrypted vars file
-ansible-vault create inventory/group_vars/keystone_hosts/vault.yml
+cp group_vars/keystone_hosts/example-vault.yml group_vars/keystone_hosts/vault.yml
 
-# Add Tailscale auth key
-tailscale_auth_key: "tskey-auth-..."
+# Edit vault.yml with your values, then encrypt:
+ansible-vault encrypt group_vars/keystone_hosts/vault.yml
 
-# Deploy with vault password
+# Deploy with vault password prompt:
 ansible-playbook site.yml --ask-vault-pass
+
+# Or store the password in a file (gitignored):
+echo "your-vault-password" > .vault-password
+ansible-playbook site.yml --vault-password-file .vault-password
 ```
+
+Key variables in `vault.yml`:
+
+| Variable | Purpose |
+|---|---|
+| `tailscale_auth_key` | Tailscale auth key for unattended provisioning |
+| `tailscale_allowed_local_sources` | LAN devices permitted through the firewall outside of the tailnet |
+
+See `group_vars/keystone_hosts/example-vault.yml` for the full structure and inline documentation.
 
 ## Troubleshooting
 
