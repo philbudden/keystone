@@ -34,8 +34,8 @@ ansible-galaxy install -r requirements.yml
 vim inventory/hosts.yml
 
 # 5. Deploy (dry-run first)
-ansible-playbook site.yml --check
-ansible-playbook site.yml
+ansible-playbook -i inventory/hosts.yml site.yml --check
+ansible-playbook -i inventory/hosts.yml site.yml
 
 # 6. Verify installation
 ujust --list
@@ -161,21 +161,21 @@ See [Operations Guide](docs/OPERATIONS.md) for complete command reference.
 
 ```bash
 # Deploy only storage configuration
-ansible-playbook site.yml --tags storage
+ansible-playbook -i inventory/hosts.yml site.yml --tags storage
 
 # Deploy only Cockpit
-ansible-playbook site.yml --tags cockpit
+ansible-playbook -i inventory/hosts.yml site.yml --tags cockpit
 
 # Skip network configuration
-ansible-playbook site.yml --skip-tags network
+ansible-playbook -i inventory/hosts.yml site.yml --skip-tags network
 ```
 
 ### Idempotency Testing
 
 ```bash
 # Run twice; second run should show zero changes
-ansible-playbook site.yml
-ansible-playbook site.yml
+ansible-playbook -i inventory/hosts.yml site.yml
+ansible-playbook -i inventory/hosts.yml site.yml
 ```
 
 ## Documentation
@@ -339,10 +339,10 @@ If you plan to use custom storage (SSD + RAID), you **must** manually partition 
 vim inventory/hosts.yml
 
 # 3. Dry-run to see what will change
-ansible-playbook site.yml --check --diff
+ansible-playbook -i inventory/hosts.yml site.yml --check --diff
 
 # 4. Review all storage-related tasks carefully
-ansible-playbook site.yml --tags storage --check --diff
+ansible-playbook -i inventory/hosts.yml site.yml --tags storage --check --diff
 ```
 
 ### Deployment Steps
@@ -378,10 +378,10 @@ ansible-playbook site.yml --tags storage --check --diff
 5. **Deploy infrastructure**
    ```bash
    # Dry-run first
-   ansible-playbook site.yml --check
+   ansible-playbook -i inventory/hosts.yml site.yml --check
    
    # Apply configuration
-   ansible-playbook site.yml
+   ansible-playbook -i inventory/hosts.yml site.yml
    ```
 
 6. **Verify installation**
